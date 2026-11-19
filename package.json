@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "test": "bun test ./app ./service && bun test ./test",
-    "typecheck": "bun vendor/pocketjs/node_modules/typescript/bin/tsc -p tsconfig.json",
+    "typecheck": "bun vendor/pocketjs/node_modules/typescript/bin/tsc -p tsconfig.dev.json",
     "sim": "bun tools/sim.ts"
   }
 }
