@@ -1,0 +1,13 @@
+{
+  "name": "pocket-lody",
+  "version": "0.2.0",
+  "description": "Lody on a handheld: a Pocket applet for a team's coding-agent sessions, built on PocketUI",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test ./app ./service && bun test ./test",
+    "typecheck": "bun vendor/pocketjs/node_modules/typescript/bin/tsc -p tsconfig.json",
+    "sim": "bun tools/sim.ts"
+  }
+}

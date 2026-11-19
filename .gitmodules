@@ -1,0 +1,9 @@
+[submodule "vendor/pocketui"]
+	path = vendor/pocketui
+	url = https://github.com/pocket-nexus/pocketui.git
+[submodule "vendor/pocketjs"]
+	path = vendor/pocketjs
+	url = https://github.com/pocket-nexus/pocketjs.git
+[submodule "vendor/applets"]
+	path = vendor/applets
+	url = https://github.com/pocket-nexus/applets.git
