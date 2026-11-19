@@ -34,7 +34,8 @@ export function SessionPane(props: { app: AppState; commands: Accessor<Command[]
   };
   return (
     <VStack ref={(instance) => { pane = instance; }}>
-      <Show when={app.selected()} fallback={<Placeholder title="No session open" detail="Pick a session from the list to read it and answer its agent." />} keyed>
+      {/* nothing open: the pane still has its bar, which a theme whose bars are one surface draws and the others leave out */}
+      <Show when={app.selected()} fallback={<VStack grow={1}><Bar title="" back={false} /><Placeholder title="No session open" detail="Pick a session from the list to read it and answer its agent." /></VStack>} keyed>
         {(sessionId) => {
           let feed: FeedHandle | undefined;
           const [atEnd, setAtEnd] = createSignal(true);
