@@ -44,7 +44,7 @@ export function presentCreate(ui: UI, app: AppState): void {
       return (
         <VStack>
           <Show when={options()} fallback={<Text tone="muted" padding={[10, ui.metric().gutter]}>{failure() || "Asking what this workspace has."}</Text>}>
-            <Row title={theMachine()?.name ?? "No machine"} eyebrow="Machine" trailing={theMachine()?.online === false ? "offline" : undefined} disclosure onPress={() => choose("Machine", machines(), setMachine, (entry) => (entry.online ? undefined : "offline"))} name="create.machine" />
+            <Row title={theMachine()?.name ?? "No machine"} eyebrow="Machine" trailing={theMachine()?.online === false ? "offline" : undefined} disclosure autoFocus onPress={() => choose("Machine", machines(), setMachine, (entry) => (entry.online ? undefined : "offline"))} name="create.machine" />
             <Row title={theAgent()?.name ?? "No agent on this machine"} eyebrow="Agent" disclosure onPress={() => choose("Agent", agents(), setAgent)} name="create.agent" />
             <Row title={theProject()?.name ?? "No project"} eyebrow="Project" disclosure onPress={() => choose("Project", projects(), setProject, (entry) => (entry.kind === "github" ? "GitHub" : entry.kind === "local" ? "local" : undefined))} name="create.project" />
             <VStack padding={[6, ui.metric().gutter, 10, ui.metric().gutter]} spacing={8}>
