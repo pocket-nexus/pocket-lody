@@ -10,7 +10,8 @@
     "services": [
       "lody",
       "glyphs",
-      "store"
+      "store",
+      "pointer"
     ],
     "hosts": []
   },

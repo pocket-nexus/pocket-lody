@@ -19,9 +19,12 @@ The application names no colour, border or font. It says what things are (a bar,
 | New, Stop, Info | controls in the pane's bar | bar buttons, and the Lody / Session / View menus | the same | toolbar capsules, the rest behind "more" |
 | The title bar's close control | none | closes the open session; disabled when none is open | the same | the red light; the other two lights are drawn disabled |
 | New Session | a sheet from the bottom edge: three rows that open lists, Cancel beside the heading, Start as a wide button | a window with a title bar: three combo boxes, Start and Cancel centred at the foot | the same, the buttons trailing | a window with a heading: three popups, Cancel then Start at the foot |
-| The transcript's scroll bar | a thumb while it moves | a strip with arrows | a strip with arrows and ridges | a strip with a blue capsule |
+| Session Info, beside the transcript | a panel under the bars | a tool window with a close box | a blue-edged panel with a red close box | a grey panel with a red light |
+| The pointer resting on a menu row | a tint | navy | blue | blue |
 
 <p align="center"><img src="docs/pocket-lody-form.webp" width="840" alt="The New Session form in the four themes, from one source: rows and a wide Start button in Pocket; combo boxes and centred buttons in Classic 98; combo boxes and trailing buttons in XP; popups with blue caps and Cancel before Start in Aqua"></p>
+
+The manifest lists `pointer` among the applet's services: Omarchy Pocket's shell then tells the window where the stage pointer rests over it, and what is under it shows so (a menu's row, a toolbar control).
 
 `app/create.tsx` is that form: three `Picker`s, a field, and `actions`. `app/semantic.test.ts` fails if a view names a colour, an edge, a radius or a theme.
 
