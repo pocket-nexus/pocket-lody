@@ -238,3 +238,104 @@ describe("themes: the same application painted by another tradition", () => {
     expect(sim.texts()).toContain("Lody");
   });
 });
+
+describe("text outside ASCII: the run-time faces, with a glyphs service", () => {
+  interface TextStats {
+    regular: { glyphs: number; requests: number; loads: number; evictions: number; failures: number };
+    bold: { glyphs: number; requests: number; loads: number; evictions: number; failures: number };
+    waitingFrames: number;
+    relayouts: number;
+  }
+  const text = () => (globalThis as unknown as { __pocketUIText: { stats(): TextStats; settled(): boolean } }).__pocketUIText;
+  const counts = () => {
+    const stats = text().stats();
+    return { requests: stats.regular.requests + stats.bold.requests, loads: stats.regular.loads + stats.bold.loads, glyphs: stats.regular.glyphs + stats.bold.glyphs, evictions: stats.regular.evictions + stats.bold.evictions, failures: stats.regular.failures + stats.bold.failures, waitingFrames: stats.waitingFrames, relayouts: stats.relayouts };
+  };
+  /** the stand-in glyphs service: a box for each character, the same on every computer (tools/glyphs-fake.ts) */
+  async function bootWithGlyphs(size: [number, number]) {
+    delete (globalThis as { __pocketLody?: unknown }).__pocketLody;
+    const services = await fixtureServices({ glyphs: "fake" });
+    open.push(services);
+    const sim = await bootSim(guest, { size, globals: { __pocketWorkerChannels: services.bridge.channels }, busy: services.bridge.busy });
+    await sim.run(90);
+    return { sim, glyphs: services.fakeGlyphs! };
+  }
+  const select = (id: string) => (globalThis as unknown as { __pocketLody: { select(id: string): void } }).__pocketLody.select(id);
+  const outside = (line: string) => [...line].map((ch) => ch.codePointAt(0)!).filter((cp) => cp >= 0x80);
+
+  test("a line of Chinese and Latin is set by run: each script in its own face, no placeholder", async () => {
+    const { sim, glyphs } = await bootWithGlyphs([640, 360]);
+    await sim.tap(100, 80);
+    await sim.run(60);
+    shot(sim, "text-runs");
+    // the session's title, "发布 0.9.0：等待确认推送 tag": the Chinese from the run-time face, the rest from the baked one beside it
+    expect(sim.texts()).toContain("：等待确认推送");
+    expect(sim.texts()).toContain(" tag");
+    expect(sim.texts().some((line) => line.includes("\u00b7"))).toBe(false);
+    expect(text().settled()).toBe(true);
+    // only the characters shown were asked for, each once, and printable ASCII once for each weight
+    expect(glyphs.log.repeats).toBe(0);
+    expect(glyphs.log.glyphs).toBe(glyphs.log.asked);
+    expect(counts().failures).toBe(0);
+  });
+
+  test("Chinese typed into the composer is drawn as it is typed, and sent as it was typed", async () => {
+    const { sim, glyphs } = await bootWithGlyphs([640, 360]);
+    await sim.tap(100, 170);
+    await sim.run(60);
+    await sim.tap(380, 320);
+    await sim.run(6);
+    await sim.type("重跑 fr_FR 的快照测试…");
+    await sim.run(12);
+    shot(sim, "text-composer");
+    // the field is one face, character for character: the run-time one once anything is outside ASCII
+    expect(sim.texts()).toContain("重跑 fr_FR 的快照测试…");
+    for (const cp of outside("重跑的快照测试…")) expect(glyphs.sent(cp)).toBe(true);
+    expect(text().settled()).toBe(true);
+    await sim.key("Enter");
+    await sim.run(40);
+    // in the transcript it is a paragraph set by run
+    expect(has(sim, "的快照测试…")).toBe(true);
+    expect(sim.texts().some((line) => line.includes("\u00b7"))).toBe(false);
+  });
+
+  test("a long Chinese transcript scrolled up, down and up again: what was drawn once is never fetched, loaded or missing again", async () => {
+    const { sim, glyphs } = await bootWithGlyphs([640, 360]);
+    select("s-review");
+    for (let i = 0; i < 300 && !(i > 4 && text().settled()); i++) await sim.run(1);
+    await sim.run(20);
+    expect(has(sim, "经有答案要好")).toBe(true);
+    /** Drag until the transcript's first or last line is painted; at every stop, what is painted is whole. */
+    const scroll = async (up: boolean, whole: boolean) => {
+      for (let i = 0; i < 60; i++) {
+        await sim.drag(420, up ? 70 : 240, 420, up ? 240 : 70, 8);
+        await sim.run(6);
+        const lines = sim.texts();
+        expect(lines.some((line) => line.includes("\u00b7"))).toBe(false);
+        if (whole) {
+          // every character on screen has its glyph: nothing waits, and nothing held was dropped
+          expect(text().settled()).toBe(true);
+          for (const line of lines) for (const cp of outside(line)) expect(glyphs.sent(cp)).toBe(true);
+        }
+        if (lines.some((line) => line.includes(up ? "下午的设计评审" : "经有答案要好"))) return;
+      }
+      throw new Error(`the transcript's ${up ? "start" : "end"} was not reached`);
+    };
+    // the first time up, older pages arrive and bring characters with them
+    await scroll(true, false);
+    for (let i = 0; i < 300 && !text().settled(); i++) await sim.run(1);
+    shot(sim, "text-review-top");
+    const seen = counts();
+    expect(seen.glyphs).toBeGreaterThan(700);
+    expect(seen.failures).toBe(0);
+    // from here on everything has been drawn once
+    await scroll(false, true);
+    await scroll(true, true);
+    await scroll(false, true);
+    await scroll(true, true);
+    shot(sim, "text-review-again");
+    expect(counts()).toEqual(seen);
+    expect(seen.evictions).toBe(0);
+    expect(glyphs.log.repeats).toBe(0);
+  }, 120_000);
+});

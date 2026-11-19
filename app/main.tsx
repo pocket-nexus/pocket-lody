@@ -7,7 +7,7 @@ import { mount } from "@pocketjs/framework/solid";
 import { createRenderEffect } from "solid-js";
 import { PocketUI, type UI } from "../vendor/pocketui/src/index.ts";
 import { App } from "./app.tsx";
-import { installFaces } from "./faces.ts";
+import { installFaces, prefetchText } from "./faces.ts";
 import { memory, transport } from "./net.ts";
 import { createAppState, type AppState } from "./state.ts";
 import { themeById } from "./themes.ts";
@@ -17,9 +17,11 @@ type Hooks = { __omarchyResized?: (width: number, height: number) => void; __poc
 
 mount(() => {
   const hooks = globalThis as Hooks;
-  installFaces();
+  const text = installFaces();
   // one state for the realm: the workspace, the open session, the drafts
   const app = (hooks.__pocketLody ??= createAppState(transport, memory));
+  // the characters of what arrives, fetched before they are scrolled to
+  prefetchText(text, [() => app.store.sessions(), () => app.store.transcript()?.items]);
   let ui: UI | undefined;
   hooks.__omarchyResized = (width, height) => {
     resizeAuxiliarySurface(width, height);

@@ -34,7 +34,7 @@ The pictures are the simulator at 640×360 on the fixture data. Classic is set i
 
 | Path | Contents |
 | --- | --- |
-| `app/` | The applet: `app.tsx` (the three panes and the commands), `sessions.tsx`, `session.tsx`, `items.tsx` (one transcript item as elements), `composer.tsx`, `info.tsx`, `create.tsx`, `link.tsx` (setting the device up and signing in: the page's QR code, the code, the countdown), `themes.ts`, `store.ts` (the workspace as the applet holds it), `net.ts` and `faces.ts` (the worker's transport and run-time glyphs, from pocket-nexus/applets) |
+| `app/` | The applet: `app.tsx` (the three panes and the commands), `sessions.tsx`, `session.tsx`, `items.tsx` (one transcript item as elements), `composer.tsx`, `info.tsx`, `create.tsx`, `link.tsx` (setting the device up and signing in: the page's QR code, the code, the countdown), `themes.ts`, `store.ts` (the workspace as the applet holds it), `net.ts` (the worker's transport, from pocket-nexus/applets) and `faces.ts` (the way from PocketUI's run-time faces to the companion's glyphs service, and the characters of what arrives asked for ahead) |
 | `protocol.ts` | What the applet and the service say to each other |
 | `service/` | The `lody` companion service: `service.ts` (routes, revisions, the held request), and three drivers behind one interface (`backend.ts`): `fixture.ts`, `cli.ts`, `remote.ts`. `serve.ts` runs it as an HTTP server; `provider.ts` is its form inside omarchy-pocketd or Pocket Hub |
 | `tools/` | `sim.ts` (the applet in PocketJS's simulator on any surface, against the service in process; the runner is PocketUI's), `build.ts` (the package for a host contract), `thor.ts` (build, push, open, capture, provision and call the service on a device over adb), `paths.ts` (where the dependencies are, alone or vendored) |
@@ -170,7 +170,7 @@ bun test ./app ./service                               # the store and the servi
 bun run typecheck
 ```
 
-The simulator needs its wasm core once: `rustup target add wasm32-unknown-unknown` for the pinned toolchain, then `bun vendor/pocketjs/tools/wasm.ts`. Chinese draws in the simulator through Pocket Hub's glyphs service where there is a checkout of it beside this repository (Omarchy Pocket's `vendor/pocket-hub`, with `git -C vendor/pocket-hub submodule update --init vendor/pocketjs`) or at `POCKET_HUB_ROOT`; it uses CoreText on a Mac.
+The simulator needs its wasm core once: `rustup target add wasm32-unknown-unknown` for the pinned toolchain, then `bun vendor/pocketjs/tools/wasm.ts`. Chinese draws in the simulator through Pocket Hub's glyphs service where there is a checkout of it beside this repository (Omarchy Pocket's `vendor/pocket-hub`, with `git -C vendor/pocket-hub submodule update --init vendor/pocketjs`) or at `POCKET_HUB_ROOT`; it uses CoreText on a Mac. `bun tools/sim.ts --fake-glyphs` and the tests use a stand-in instead (`tools/glyphs-fake.ts`: a box for each character, the same on every computer), and `bun tools/text-bench.ts` counts on it what a long Chinese transcript costs: requests, bytes, frames until the text is whole, layouts, and what scrolling back over it costs (nothing).
 
 On a device running a build that `run-as` reaches (`bun tools/android.ts apk --debuggable`, which is the release build signed with the release key: it installs over a published release and keeps its Linux root):
 

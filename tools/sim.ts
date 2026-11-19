@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// bun tools/sim.ts [--size WxH | --psp] [--theme pocket|classic|luna|aqua] [--start setup|signed-out] [--do "<steps>"] [--shot out.png]
+// bun tools/sim.ts [--size WxH | --psp] [--theme pocket|classic|luna|aqua] [--start setup|signed-out] [--no-glyphs | --fake-glyphs] [--text-stats] [--do "<steps>"] [--shot out.png]
 //
 // The applet in PocketJS's simulator, headless, on one surface: `--size` is a
 // touch surface of that many points (default 640x360), `--psp` a 480x272
@@ -7,7 +7,9 @@
 // runner's (vendor/pocketui/tools/sim.ts: frames, tap, drag, lift, press,
 // type, key, shot, texts, cmd, theme); what this adds is the companion's
 // services, in process: `lody` on its fixture driver, a `store` in memory,
-// and Pocket Hub's `glyphs` where this computer can draw them.
+// and Pocket Hub's `glyphs` where this computer can draw them (--fake-glyphs:
+// a stand-in that draws a box for each character, the same everywhere, and
+// --text-stats prints what the run-time faces asked for and loaded).
 //
 // --theme starts in a theme (as if it were the one kept from last time);
 // --start begins where a device without an account does (service/fixture.ts).
@@ -20,8 +22,8 @@ export { bootSim, runSteps, ROOT, type Sim, type SimOptions };
 /** The applet (or another manifest in this repository) built for the simulator. */
 export const buildGuest = (manifestPath: string = join(ROOT, "pocket.app.json")): Promise<string> => buildWith(manifestPath, { root: ROOT, pocketjs: pocketjs(), out: join(CACHE, "sim") });
 
-/** The companion's services for a simulated applet: `lody` on its fixture driver (its clock moves a frame at a time), a `store` in memory, and Pocket Hub's `glyphs` where this computer can draw them. */
-export async function fixtureServices(options: { glyphs?: boolean; remembered?: Record<string, unknown>; start?: "setup" | "signed-out" } = {}) {
+/** The companion's services for a simulated applet: `lody` on its fixture driver (its clock moves a frame at a time), a `store` in memory, and `glyphs`: Pocket Hub's where this computer can draw them, `"fake"` for the stand-in that is the same on every computer (tools/glyphs-fake.ts), `false` for none. */
+export async function fixtureServices(options: { glyphs?: boolean | "fake"; remembered?: Record<string, unknown>; start?: "setup" | "signed-out" } = {}) {
   const { createBridge } = await import("./bridge.ts");
   const { createLodyService } = await import("../service/service.ts");
   const { createFixtureBackend } = await import("../service/fixture.ts");
@@ -32,7 +34,8 @@ export async function fixtureServices(options: { glyphs?: boolean; remembered?: 
   if (options.remembered) store.set("lody.state", JSON.stringify(options.remembered));
   const json = (status: number, value: unknown) => ({ status, headers: { "content-type": "application/json" }, body: JSON.stringify(value) });
   let glyphs: { handle(request: unknown): Promise<{ status: number; headers?: Record<string, string>; body?: Uint8Array }>; close?(): void } | null = null;
-  if (options.glyphs !== false) {
+  const fake = options.glyphs === "fake" ? (await import("./glyphs-fake.ts")).createFakeGlyphs() : null;
+  if (options.glyphs !== false && !fake) {
     try {
       const { createGlyphsService } = await import(join(dep("pocket-hub", "tools/companion/services/glyphs.ts"), "tools/companion/services/glyphs.ts"));
       glyphs = createGlyphsService({ storeDir: join(CACHE, "sim/glyphs"), log: () => {} });
@@ -53,6 +56,7 @@ export async function fixtureServices(options: { glyphs?: boolean; remembered?: 
         return json(404, { error: "no such store call" });
       },
       glyphs: async (request) => {
+        if (fake) return fake.handle(request);
         if (!glyphs) return json(503, { error: "this computer cannot draw glyphs" });
         const answer = await glyphs.handle({ method: request.method, path: request.url.pathname.replace(/^\/glyphs/, ""), query: request.url.searchParams, body: request.body, maxBytes: 256 * 1024, console: { id: "sim" }, signal: new AbortController().signal });
         return { status: answer.status, headers: answer.headers, body: answer.body };
@@ -60,7 +64,7 @@ export async function fixtureServices(options: { glyphs?: boolean; remembered?: 
     },
     () => backend.advance(1000 / 60),
   );
-  return { bridge, backend, service, close: () => { service.close(); glyphs?.close?.(); } };
+  return { bridge, backend, service, fakeGlyphs: fake, close: () => { service.close(); glyphs?.close?.(); } };
 }
 
 if (import.meta.main) {
@@ -69,13 +73,14 @@ if (import.meta.main) {
   const started = performance.now();
   const guest = await buildGuest();
   const size = argv.includes("--psp") ? null : ((opt("--size") ?? "640x360").split("x").map(Number) as [number, number]);
-  const services = argv.includes("--no-service") ? null : await fixtureServices({ glyphs: !argv.includes("--no-glyphs"), remembered: opt("--theme") ? { theme: opt("--theme") } : undefined, start: opt("--start") as "setup" | "signed-out" | undefined });
+  const services = argv.includes("--no-service") ? null : await fixtureServices({ glyphs: argv.includes("--fake-glyphs") ? "fake" : !argv.includes("--no-glyphs"), remembered: opt("--theme") ? { theme: opt("--theme") } : undefined, start: opt("--start") as "setup" | "signed-out" | undefined });
   const sim = await bootSim(guest, { size, globals: services ? { __pocketWorkerChannels: services.bridge.channels } : {}, busy: services?.bridge.busy });
   await sim.run(30);
   for (const line of sim.logs()) console.log(line);
   await runSteps(sim, opt("--do") ?? "");
   const shot = opt("--shot");
   if (shot) sim.shot(shot);
+  if (argv.includes("--text-stats")) console.log(JSON.stringify({ faces: (globalThis as { __pocketUIText?: { stats(): unknown } }).__pocketUIText?.stats(), service: services?.fakeGlyphs?.log }, null, 2));
   if (argv.includes("--net")) for (const line of services?.bridge.log ?? []) console.log(line);
   console.log(`done in ${Math.round(performance.now() - started)} ms`);
   services?.close();
