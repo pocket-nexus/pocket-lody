@@ -4,7 +4,7 @@
 // row whose item did not change is not laid out again. What each looks like
 // is the theme's: an item says it is a bubble, a card, a well, a remark.
 import { For, Match, Show, Switch, type Accessor, type JSX } from "solid-js";
-import { Badge, Bubble, Button, Callout, Card, Divider, Glyph, HStack, Label, Markdown, StatusDot, Text, useUI, VStack, Well, type Tone, type UIElement } from "../vendor/pocketui/src/index.ts";
+import { Badge, Bubble, Button, Callout, Card, Divider, Glyph, HStack, Label, Markdown, StatusDot, Text, useUI, VStack, Well, type Tone, type UIElement } from "@pocketjs/framework/ui";
 import type { AskOption, DiffFile, Item, ToolKind, ToolStatus } from "../protocol.ts";
 import { duration } from "./format.ts";
 import type { AppState } from "./state.ts";

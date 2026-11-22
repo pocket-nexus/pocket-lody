@@ -1,7 +1,7 @@
 // pocket-lody/app/sessions.tsx — the list pane: the workspace's sessions,
 // what needs a person first (format.ts groupSessions).
 import { createMemo, Match, onCleanup, Show, Switch, type Accessor } from "solid-js";
-import { Bar, Button, Card, Feed, Placeholder, Row, Section, StatusDot, Text, useCommands, useUI, VStack, type Command, type Instance, type UIElement } from "../vendor/pocketui/src/index.ts";
+import { Bar, Button, Card, Feed, Placeholder, Row, Section, StatusDot, Text, useCommands, useUI, VStack, type Command, type Instance, type UIElement } from "@pocketjs/framework/ui";
 import type { SessionRow } from "../protocol.ts";
 import { age, groupSessions, sessionDetail, STATE_TONE } from "./format.ts";
 import type { AppState } from "./state.ts";

@@ -6,7 +6,8 @@
 // device running a build of Omarchy Pocket that run-as reaches
 // (`bun tools/android.ts apk --debuggable`):
 //
-//   build   compile the applet for the handheld's host contract
+//   build   compile the applet for the handheld's host contract, with Omarchy
+//           Pocket's pointer layer (host/layers/pointer.ts)
 //   push    put it in the Linux root's ~/.local/share/omarchy-pocket/applets,
 //           which the shell reads before /usr/share
 //   open    open it in a window (a window already open restarts)
@@ -158,7 +159,8 @@ for (let i = 0; i < argv.length; i++) {
   switch (argv[i]) {
     case "build": {
       const host = JSON.parse(await Bun.file(join(omarchy(), "android/handhelds", HANDHELD, "pocket.host.json")).text());
-      const built = await buildApplet({ hostConfig: join(omarchy(), "android/handhelds", HANDHELD, "pocket.host.config.ts"), out: OUT, stage: host.display.logicalViewports[0] });
+      // the handheld's host contract, and Omarchy Pocket's layer that hands its shell's resting pointer on as the frame's pointer
+      const built = await buildApplet({ target: join(omarchy(), "android/handhelds", HANDHELD, "pocket.host.json"), out: OUT, stage: host.display.logicalViewports[0], layers: [join(omarchy(), "host/layers/pointer.ts")] });
       console.log(`built ${(built.bytes / 1024).toFixed(0)} KiB`);
       break;
     }

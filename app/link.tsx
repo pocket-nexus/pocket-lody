@@ -7,7 +7,7 @@
 // its QR code or its address, and the workspace arrives here when it is
 // confirmed. Nothing is typed on this device.
 import { Match, Show, Switch } from "solid-js";
-import { Button, Card, HStack, Label, MatrixCode, Placeholder, Progress, Scroll, Text, useUI, VStack, type UIElement } from "../vendor/pocketui/src/index.ts";
+import { Button, Card, HStack, Label, MatrixCode, Placeholder, Progress, Scroll, Text, useUI, VStack, type UIElement } from "@pocketjs/framework/ui";
 import type { AppState } from "./state.ts";
 
 /** "9:41" until `at`, or "" once it has passed. */

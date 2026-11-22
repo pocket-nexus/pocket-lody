@@ -49,10 +49,17 @@ export interface LodyServiceOptions {
   pageBytes?: number;
   /** a draft nobody sent is forgotten after this long */
   draftTtlMs?: number;
+  /** a /sync answers within this long (default SYNC_ANSWER_MS) */
+  answerMs?: number;
   now?: () => number;
 }
 
 export const SYNC_WAIT_MAX_S = 25;
+/** A /sync answers within this long of arriving, whatever the driver is doing:
+ *  Omarchy Pocket's daemon gives a service request 32 s, and the device's CLI
+ *  takes 13 s for a session list and 20 s for a session's history, one after
+ *  the other on a cold start. What the driver brings later is the next sync's. */
+export const SYNC_ANSWER_MS = 24_000;
 export const PAGE_DEFAULT = 40;
 export const PAGE_MAX = 200;
 export const MENTIONS_MAX = 12;
@@ -278,6 +285,7 @@ export function createLodyService(backend: LodyBackend, options: LodyServiceOpti
   const now = options.now ?? Date.now;
   const pageBytes = options.pageBytes ?? PAGE_BYTES;
   const draftTtl = options.draftTtlMs ?? DRAFT_TTL_MS;
+  const answerMs = options.answerMs ?? SYNC_ANSWER_MS;
   let counter = options.seed ?? now();
   const next = () => ++counter;
   let closed = false;
@@ -298,6 +306,8 @@ export function createLodyService(backend: LodyBackend, options: LodyServiceOpti
         if (!snapshot || text !== snapshotJson) {
           snapshotJson = text;
           snapshot = { rev: next(), ...fresh };
+          // a sync that answered before this pull came back is waiting for it
+          wake();
         }
         return snapshot;
       } catch (error) {
@@ -324,10 +334,12 @@ export function createLodyService(backend: LodyBackend, options: LodyServiceOpti
         try {
           dirty.delete(sessionId);
           const ledger = ledgers.get(sessionId) ?? new TranscriptLedger();
+          const before = ledger.rev;
           ledger.absorb(await backend.transcript(sessionId), next);
           // a session that never was is not remembered
           if (ledger.gone && !ledgers.has(sessionId)) return ledger;
           ledgers.set(sessionId, ledger);
+          if (ledger.rev !== before) wake();
           return ledger;
         } catch (error) {
           dirty.add(sessionId);
@@ -343,7 +355,10 @@ export function createLodyService(backend: LodyBackend, options: LodyServiceOpti
 
   // --- waiting for a change -------------------------------------------------
   const waiters = new Set<() => void>();
+  /** changes so far: a sync notes it before a look, and a change between the look and its wait is not missed */
+  let changes = 0;
   const wake = () => {
+    changes++;
     for (const waiter of [...waiters]) waiter();
   };
   const unsubscribe = backend.subscribe((change: BackendChange) => {
@@ -352,10 +367,35 @@ export function createLodyService(backend: LodyBackend, options: LodyServiceOpti
     wake();
   });
 
-  /** Resolves at a change, after `ms`, or when `signal` aborts. */
-  function changeWithin(ms: number, signal?: AbortSignal): Promise<void> {
+  /** `pull`'s value, or, when it is not back by `by`, `held` (undefined: nothing is held yet). A pull that loses keeps running and is the next look's. */
+  function heldBy<T>(pull: Promise<T>, by: number, held: T | undefined): Promise<T | undefined> {
+    const left = by - now();
+    if (left <= 0) {
+      pull.catch(() => {});
+      return Promise.resolve(held);
+    }
+    return new Promise<T | undefined>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        pull.catch(() => {});
+        resolve(held);
+      }, left);
+      pull.then(
+        (value) => {
+          clearTimeout(timer);
+          resolve(value);
+        },
+        (error) => {
+          clearTimeout(timer);
+          reject(error);
+        },
+      );
+    });
+  }
+
+  /** Resolves at a change after the `seen`th, after `ms`, or when `signal` aborts. */
+  function changeWithin(ms: number, signal?: AbortSignal, seen = changes): Promise<void> {
     return new Promise((resolve) => {
-      if (signal?.aborted || closed) return resolve();
+      if (signal?.aborted || closed || changes !== seen) return resolve();
       const done = () => {
         clearTimeout(timer);
         waiters.delete(done);
@@ -440,16 +480,20 @@ export function createLodyService(backend: LodyBackend, options: LodyServiceOpti
     const srev = whole(query, "srev");
     const waitRaw = Number(query.get("wait") ?? 0);
     const waitMs = Number.isFinite(waitRaw) ? Math.min(SYNC_WAIT_MAX_S, Math.max(0, waitRaw)) * 1000 : 0;
-    const deadline = now() + waitMs;
+    const arrived = now();
+    const deadline = arrived + Math.min(waitMs, answerMs);
+    const answerBy = arrived + answerMs;
     // the first look asks the driver even when nothing was reported: a driver
     // refreshes a session more often while someone has it open
     for (let look = 0; ; look++) {
-      const current = await currentSnapshot();
-      const out: SyncResponse = { protocol: PROTOCOL, rev: current.rev };
-      if (current.rev !== rev) out.snapshot = current;
+      const seen = changes;
+      // what the driver has not brought by the time to answer stays its own: the answer carries what is held
+      const current = await heldBy(currentSnapshot(), answerBy, snapshot);
+      const out: SyncResponse = { protocol: PROTOCOL, rev: current?.rev ?? rev ?? 0 };
+      if (current && current.rev !== rev) out.snapshot = current;
       if (sessionId) {
-        const ledger = await currentLedger(sessionId, look === 0);
-        if (!ledger.gone) {
+        const ledger = await heldBy(currentLedger(sessionId, look === 0), answerBy, ledgers.get(sessionId));
+        if (ledger && !ledger.gone) {
           if (srev === undefined || srev <= 0) out.transcript = newest(ledger, sessionId, PAGE_DEFAULT, srev !== undefined);
           else if (ledger.rev !== srev) out.transcript = ledger.since(sessionId, srev);
         }
@@ -457,7 +501,7 @@ export function createLodyService(backend: LodyBackend, options: LodyServiceOpti
       const left = deadline - now();
       if (out.snapshot || out.transcript || left <= 0 || closed) return json(200, out);
       if (signal?.aborted) return fail(CANCELLED, "The request was cancelled.");
-      await changeWithin(left, signal);
+      await changeWithin(left, signal, seen);
       if (signal?.aborted) return fail(CANCELLED, "The request was cancelled.");
     }
   }

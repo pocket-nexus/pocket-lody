@@ -1,10 +1,10 @@
 // The configuration `bun run typecheck` reads. It is not named tsconfig.json: PocketJS's compiler
 // inherits a project root's tsconfig.json when it checks the applet, and this one names packages
-// (bun-types, vendor/pocketjs's) that are not there where this repository is vendored beside PocketJS.
+// (bun-types, the vendored PocketJS's) by paths that are not there when another tool compiles the applet.
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2023"],
+    "lib": ["ESNext"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "preserve",
@@ -15,16 +15,19 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "types": ["bun-types"],
-    "typeRoots": ["./vendor/pocketjs/node_modules/@types", "./vendor/pocketjs/node_modules"],
+    "typeRoots": ["./vendor/pocket-shell/vendor/pocketjs/node_modules/@types", "./vendor/pocket-shell/vendor/pocketjs/node_modules"],
     "baseUrl": ".",
     "paths": {
-      "solid-js": ["./vendor/pocketjs/node_modules/solid-js"],
-      "@pocketjs/framework": ["./vendor/pocketjs/framework/src/index.ts"],
-      "@pocketjs/framework/solid": ["./vendor/pocketjs/framework/src/index.ts"],
-      "@pocketjs/framework/input": ["./vendor/pocketjs/framework/src/input-api.ts"],
-      "@pocketjs/framework/lifecycle": ["./vendor/pocketjs/framework/src/lifecycle.ts"],
-      "@pocketjs/framework/*": ["./vendor/pocketjs/framework/src/*"]
+      "solid-js": ["./vendor/pocket-shell/vendor/pocketjs/node_modules/solid-js"],
+      "@pocketjs/framework": ["./vendor/pocket-shell/vendor/pocketjs/framework/src/index.ts"],
+      "@pocketjs/framework/solid": ["./vendor/pocket-shell/vendor/pocketjs/framework/src/index.ts"],
+      "@pocketjs/framework/input": ["./vendor/pocket-shell/vendor/pocketjs/framework/src/input-api.ts"],
+      "@pocketjs/framework/lifecycle": ["./vendor/pocket-shell/vendor/pocketjs/framework/src/lifecycle.ts"],
+      "@pocketjs/framework/ui": ["./vendor/pocket-shell/vendor/pocketjs/framework/src/pocketui/index.ts"],
+      "@pocketjs/framework/system-layers": ["./vendor/pocket-shell/vendor/pocketjs/framework/src/system-layers-api.ts"],
+      "@pocket-shell/runtime/*": ["./vendor/pocket-shell/runtime/src/*"],
+      "@pocketjs/framework/*": ["./vendor/pocket-shell/vendor/pocketjs/framework/src/*"]
     }
   },
-  "include": ["app", "service", "tools", "test", "protocol.ts", "vendor/pocketui/src", "vendor/pocketjs/framework/src/jsx.d.ts"]
+  "include": ["app", "service", "tools", "test", "protocol.ts", "vendor/pocketjs/framework/src/jsx.d.ts"]
 }

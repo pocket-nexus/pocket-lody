@@ -11,8 +11,8 @@
 //
 // The simulator draws at density 1; a device's bytes are the same glyph
 // counts at its own density (the table at the end).
-import { encodeAtlas, GlyphTable, parseAtlas, splitRuns } from "../vendor/pocketui/src/core/glyphfont.ts";
-import { createRuntimeFaces } from "../vendor/pocketui/src/core/runtimefaces.ts";
+import { encodeAtlas, GlyphTable, parseAtlas, splitRuns } from "../vendor/pocket-shell/vendor/pocketjs/framework/src/pocketui/core/glyphfont.ts";
+import { createRuntimeFaces } from "../vendor/pocket-shell/vendor/pocketjs/framework/src/pocketui/core/runtimefaces.ts";
 import { REVIEW_ROUNDS } from "../service/fixture-data.ts";
 import { bootSim, buildGuest, fixtureServices } from "./sim.ts";
 

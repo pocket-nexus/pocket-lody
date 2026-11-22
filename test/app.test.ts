@@ -3,14 +3,14 @@
 // fixture driver (tools/sim.ts). What a person would see is read back as the
 // painted texts; what they would do is taps, drags and button presses.
 //
-// Needs the simulator's wasm core once: `bun vendor/pocketjs/tools/wasm.ts`
+// Needs the simulator's wasm core once: `bun vendor/pocket-shell/vendor/pocketjs/tools/wasm.ts`
 // (rustup target wasm32-unknown-unknown). POCKET_LODY_SHOTS=<dir> writes PNGs.
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { bootSim, buildGuest, fixtureServices, ROOT, type Sim } from "../tools/sim.ts";
+import { bootSim, buildGuest, fixtureServices, ROOT, type Guest, type Sim } from "../tools/sim.ts";
 
 const SHOTS = process.env.POCKET_LODY_SHOTS;
-let guest = "";
+let guest: Guest;
 const open: { close(): void }[] = [];
 
 beforeAll(async () => {
@@ -86,7 +86,7 @@ describe("a 640 x 360 touch surface with a pad (a window on a handheld)", () => 
     const sim = await boot([640, 360]);
     await sim.tap(100, 170);
     await sim.run(60);
-    for (const button of ["DOWN", "DOWN", "DOWN"]) await sim.press(button);
+    for (const button of ["DOWN", "DOWN", "DOWN"] as const) await sim.press(button);
     await sim.press("SQUARE");
     await sim.run(30);
     expect(has(sim, "COMMANDS")).toBe(true);
@@ -144,7 +144,7 @@ describe("a 480 x 272 screen with buttons and no touch (a PSP)", () => {
     // the legend names the pad's buttons; there are no bar controls to tap
     expect(sim.texts()).toContain("Menu");
     expect(sim.texts()).not.toContain("...");
-    for (const button of ["DOWN", "DOWN", "DOWN", "CIRCLE"]) await sim.press(button);
+    for (const button of ["DOWN", "DOWN", "DOWN", "CIRCLE"] as const) await sim.press(button);
     await sim.run(60);
     shot(sim, "pad-session");
     expect(has(sim, "NEEDS YOU")).toBe(false);

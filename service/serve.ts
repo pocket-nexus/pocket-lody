@@ -98,7 +98,7 @@ export function startServer(options: ServeOptions = {}): Served {
     const body = request.method === "GET" || request.method === "HEAD" ? new Uint8Array(0) : new Uint8Array(await request.arrayBuffer());
     const inner = { method: request.method, query: url.searchParams, body, signal: request.signal };
     const result = rest === "/_backend" || rest.startsWith("/_backend/") ? await rpc.handle({ ...inner, path: rest.slice("/_backend".length) || "/" }) : await service.handle({ ...inner, path: rest });
-    return new Response(result.body, { status: result.status === 499 ? 408 : result.status, headers: { ...result.headers, "content-length": String(result.body.length) } });
+    return new Response(result.body as Uint8Array<ArrayBuffer>, { status: result.status === 499 ? 408 : result.status, headers: { ...result.headers, "content-length": String(result.body.length) } });
   }
 
   return {

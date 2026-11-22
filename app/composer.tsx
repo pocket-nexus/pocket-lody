@@ -7,7 +7,7 @@
 // them and Enter or a tap puts one in as a token, which the field treats as
 // one character from then on.
 import { createEffect, createSignal, For, on, onCleanup, Show } from "solid-js";
-import { Button, Divider, HStack, Text, TextEditor, useUI, VStack, type EditorHandle, type EditorSnapshot, type Instance, type UIElement } from "../vendor/pocketui/src/index.ts";
+import { Button, Divider, HStack, Text, TextEditor, useUI, VStack, type EditorHandle, type EditorSnapshot, type Instance, type UIElement } from "@pocketjs/framework/ui";
 import type { MentionRow } from "../protocol.ts";
 import type { AppState } from "./state.ts";
 
