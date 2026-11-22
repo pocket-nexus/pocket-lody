@@ -142,6 +142,50 @@ describe("sync", () => {
   });
 });
 
+describe("a slow driver", () => {
+  // The device's CLI takes 13 s for a session list and 20 s for a history,
+  // and Omarchy Pocket's daemon gives a request 32 s: a sync answers by its
+  // budget with what is held, and what the driver brings later wakes the next.
+  test("a sync answers by its budget with what is held, and the late snapshot is the next sync's", async () => {
+    fixture = createFixtureBackend({ now: NOW });
+    let slow = false;
+    const snapshot = fixture.snapshot.bind(fixture);
+    const backend = Object.assign(Object.create(fixture), {
+      snapshot: async () => {
+        const value = await snapshot();
+        if (slow) await new Promise((done) => setTimeout(done, 300));
+        return value;
+      },
+    });
+    service = createLodyService(backend, { seed: 1000, answerMs: 100 });
+    const first = await get<SyncResponse>("/sync", { rev: 0 });
+    expect(first.body.snapshot?.sessions.length).toBeGreaterThan(0);
+    // a change is reported, and the driver is slow to bring it
+    slow = true;
+    await post("/read", { session: first.body.snapshot!.sessions[0]!.id });
+    const started = Date.now();
+    const held = await get<SyncResponse>("/sync", { rev: first.body.rev, wait: 20 });
+    expect(Date.now() - started).toBeLessThan(250);
+    expect(held.status).toBe(200);
+    // the pull kept running: the next sync has it without asking the driver again
+    slow = false;
+    await new Promise((done) => setTimeout(done, 350));
+    const after = await get<SyncResponse>("/sync", { rev: held.body.rev, wait: 0 });
+    expect(after.status).toBe(200);
+  });
+
+  test("a sync with nothing held yet answers by its budget without a snapshot", async () => {
+    fixture = createFixtureBackend({ now: NOW });
+    const backend = Object.assign(Object.create(fixture), { snapshot: () => new Promise(() => {}) });
+    service = createLodyService(backend, { seed: 1000, answerMs: 50 });
+    const started = Date.now();
+    const answer = await get<SyncResponse>("/sync", { rev: 0 });
+    expect(Date.now() - started).toBeLessThan(200);
+    expect(answer.status).toBe(200);
+    expect(answer.body.snapshot).toBeUndefined();
+  });
+});
+
 describe("a transcript", () => {
   test("opens on its newest page and pages back to the start", async () => {
     setup();

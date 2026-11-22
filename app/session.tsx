@@ -1,7 +1,7 @@
 // pocket-lody/app/session.tsx — the detail pane: one session's transcript,
 // following its end while the reader is there, and the composer under it.
 import { createEffect, createMemo, createSignal, on, onCleanup, Show, type Accessor } from "solid-js";
-import { Bar, Button, Feed, HStack, Placeholder, StatusDot, useCommands, useUI, VStack, ZStack, type Command, type EditorHandle, type FeedHandle, type Instance, type UIElement } from "../vendor/pocketui/src/index.ts";
+import { Bar, Button, Feed, HStack, Placeholder, StatusDot, useCommands, useUI, VStack, ZStack, type Command, type EditorHandle, type FeedHandle, type Instance, type UIElement } from "@pocketjs/framework/ui";
 import type { Item } from "../protocol.ts";
 import { Composer } from "./composer.tsx";
 import { STATE_LABEL, STATE_TONE } from "./format.ts";

@@ -4,7 +4,7 @@
 // for), with a drawn box in place of each glyph, the same on every computer,
 // and it counts what it was asked. Printable ASCII is half an em wide and
 // everything else one em, as in the fonts a device has.
-import { encodeAtlas, type AtlasGlyph } from "../vendor/pocketui/src/core/glyphfont.ts";
+import { encodeAtlas, type AtlasGlyph } from "../vendor/pocket-shell/vendor/pocketjs/framework/src/pocketui/core/glyphfont.ts";
 import type { BridgeAnswer, BridgeRequest } from "./bridge.ts";
 
 export interface GlyphLog {

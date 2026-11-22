@@ -1,26 +1,50 @@
 #!/usr/bin/env bun
 // bun tools/sim.ts [--size WxH | --psp] [--theme pocket|classic|luna|aqua] [--start setup|signed-out] [--no-glyphs | --fake-glyphs] [--text-stats] [--do "<steps>"] [--shot out.png]
 //
-// The applet in PocketJS's simulator, headless, on one surface: `--size` is a
-// touch surface of that many points (default 640x360), `--psp` a 480x272
-// screen with buttons and no touch. The steps are PocketUI's simulator
-// runner's (vendor/pocketui/tools/sim.ts: frames, tap, drag, lift, press,
-// type, key, shot, texts, cmd, theme); what this adds is the companion's
-// services, in process: `lody` on its fixture driver, a `store` in memory,
-// and Pocket Hub's `glyphs` where this computer can draw them (--fake-glyphs:
-// a stand-in that draws a box for each character, the same everywhere, and
-// --text-stats prints what the run-time faces asked for and loaded).
+// The applet on PocketJS's simulation host, headless, on one surface:
+// `--size` is a touch surface of that many points (default 640x360), `--psp`
+// a 480x272 screen with buttons and no touch. The applet is compiled as for
+// the 3DS (Pocket Shell's devices/3ds host contract); the steps are
+// PocketJS's tools/pocketui-sim.ts runner's (frames, tap, drag, lift, press,
+// type, key, hover, click, wheel, shot, texts, cmd, theme). What this adds is
+// the companion's services, in process: `lody` on its fixture driver, a
+// `store` in memory, and Pocket Hub's `glyphs` where this computer can draw
+// them (--fake-glyphs: a stand-in that draws a box for each character, the
+// same everywhere, and --text-stats prints what the run-time faces asked for
+// and loaded).
 //
 // --theme starts in a theme (as if it were the one kept from last time);
 // --start begins where a device without an account does (service/fixture.ts).
 import { join } from "node:path";
-import { bootSim, buildGuest as buildWith, runSteps, type Sim, type SimOptions } from "../vendor/pocketui/tools/sim.ts";
-import { CACHE, dep, pocketjs, ROOT } from "./paths.ts";
+import { buildApplet } from "./build.ts";
+import { CACHE, dep, POCKET_SHELL, POCKETJS, ROOT } from "./paths.ts";
 
-export { bootSim, runSteps, ROOT, type Sim, type SimOptions };
+const runner = (await import(join(POCKETJS, "tools/pocketui-sim.ts"))) as typeof import("../vendor/pocket-shell/vendor/pocketjs/tools/pocketui-sim.ts");
+export const { runSteps } = runner;
+export type Sim = import("../vendor/pocket-shell/vendor/pocketjs/tools/pocketui-sim.ts").Sim;
+export type SimOptions = import("../vendor/pocket-shell/vendor/pocketjs/tools/pocketui-sim.ts").SimOptions;
+export { ROOT };
 
-/** The applet (or another manifest in this repository) built for the simulator. */
-export const buildGuest = (manifestPath: string = join(ROOT, "pocket.app.json")): Promise<string> => buildWith(manifestPath, { root: ROOT, pocketjs: pocketjs(), out: join(CACHE, "sim") });
+/** The applet's bundle and pack, compiled as for the 3DS. */
+export interface Guest {
+  js: string;
+  pak: string;
+}
+
+/** The applet built for the simulator. */
+export async function buildGuest(): Promise<Guest> {
+  const built = await buildApplet({ target: join(POCKET_SHELL, "devices/3ds/pocket.host.json"), out: join(CACHE, "sim/lody.pocket"), work: join(CACHE, "sim") });
+  return { js: built.js, pak: built.pak };
+}
+
+/** Boot a built applet on a touch surface of `size` points, or (null) a PSP's 480x272 screen with buttons and no touch. */
+export function bootSim(guest: Guest, options: SimOptions & { size: [number, number] | null }): Promise<Sim> {
+  const { size, ...rest } = options;
+  return runner.bootSim(
+    size ? { ...guest, viewport: { width: 400, height: 240, rasterDensity: 1, auxiliary: size }, surface: "auxiliary" } : { ...guest, viewport: { width: 480, height: 272, rasterDensity: 1 }, surface: "primary" },
+    rest,
+  );
+}
 
 /** The companion's services for a simulated applet: `lody` on its fixture driver (its clock moves a frame at a time), a `store` in memory, and `glyphs`: Pocket Hub's where this computer can draw them, `"fake"` for the stand-in that is the same on every computer (tools/glyphs-fake.ts), `false` for none. */
 export async function fixtureServices(options: { glyphs?: boolean | "fake"; remembered?: Record<string, unknown>; start?: "setup" | "signed-out" } = {}) {

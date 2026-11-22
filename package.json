@@ -6,8 +6,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "bun test ./app ./service && bun test ./test",
-    "typecheck": "bun vendor/pocketjs/node_modules/typescript/bin/tsc -p tsconfig.dev.json",
-    "sim": "bun tools/sim.ts"
+    "test": "bun test ./app ./service && bun vendor/pocket-shell/vendor/pocketjs/tools/wasm.ts && bun test --conditions=browser ./test",
+    "typecheck": "bun vendor/pocket-shell/vendor/pocketjs/node_modules/typescript/bin/tsc -p tsconfig.dev.json",
+    "sim": "bun tools/sim.ts",
+    "setup": "git submodule update --init vendor/pocket-shell vendor/applets && git -C vendor/pocket-shell submodule update --init vendor/pocketjs && bun install --cwd vendor/pocket-shell/vendor/pocketjs --frozen-lockfile && bun tools/setup.ts"
   }
 }

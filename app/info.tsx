@@ -1,7 +1,7 @@
 // pocket-lody/app/info.tsx — the inspector: facts about the open session
 // and what can be done to it as a whole.
 import { For, Show } from "solid-js";
-import { Bar, Button, Divider, Fact, HStack, Row, Scroll, Section, StatusDot, Text, useUI, VStack, type Command, type UIElement } from "../vendor/pocketui/src/index.ts";
+import { Bar, Button, Divider, Fact, HStack, Row, Scroll, Section, StatusDot, Text, useUI, VStack, type Command, type UIElement } from "@pocketjs/framework/ui";
 import { age, STATE_LABEL, STATE_TONE } from "./format.ts";
 import type { AppState } from "./state.ts";
 

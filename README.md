@@ -1,6 +1,6 @@
 # Pocket Lody
 
-[Lody](https://github.com/LodyAI/Lody) on a handheld: the sessions of a team's coding agents, their transcripts, and a composer, as a Pocket applet built on [PocketUI](https://github.com/pocket-nexus/pocketui). It runs in a window of Omarchy Pocket on an AYN Thor, and the same package source runs on a 320×240 touch surface and on a 480×272 screen with buttons and no touch.
+[Lody](https://github.com/LodyAI/Lody) on a handheld: the sessions of a team's coding agents, their transcripts, and a composer, as a Pocket applet built on PocketUI (`@pocketjs/framework/ui`, [PocketJS docs/POCKETUI.md](https://github.com/pocket-nexus/pocketjs/blob/main/docs/POCKETUI.md)). It runs in a window of Omarchy Pocket on an AYN Thor, and the same package source runs on a 320×240 touch surface and on a 480×272 screen with buttons and no touch.
 
 <p align="center"><img src="docs/pocket-lody.webp" width="840" alt="Pocket Lody on three surfaces: on an AYN Thor's upper display, the session list beside a session whose agent asks permission to push a tag; on a 320 by 240 touch surface, the same session alone with a Back control; on a 480 by 272 screen, a session with a legend naming the pad's buttons"></p>
 
@@ -12,7 +12,7 @@ The picture is the applet on its fixture data: an AYN Thor's upper display read 
 
 <p align="center"><img src="docs/pocket-lody-themes.webp" width="840" alt="Pocket Lody four times from one source, the same session open in each: the Pocket theme, dark and flat; Classic 98 with a navy title bar, a Lody / Session / View menu bar, bevelled buttons, scroll bars with arrows and a pixel face; XP with a blue title bar and rounded buttons; Aqua with three lights, a centred title, toolbar capsules and a blue gel default button"></p>
 
-The application names no colour, border or font. It says what things are (a bar, a selected row, a card that waits for an answer, the default button, the field) and which commands exist and what menu each belongs to; PocketUI's active theme paints and arranges them ([PocketUI, Themes](https://github.com/pocket-nexus/pocketui#themes)). **Theme** in the commands (the View menu where there is a menu bar) lists Pocket, Classic 98, XP and Aqua, and the choice is kept. The change happens under whatever is going on: an open session stays open, a draft keeps its text and caret, the transcript its place.
+The application names no colour, border or font. It says what things are (a bar, a selected row, a card that waits for an answer, the default button, the field) and which commands exist and what menu each belongs to; PocketUI's active theme paints and arranges them ([PocketUI, Themes](https://github.com/pocket-nexus/pocketjs/blob/main/docs/POCKETUI.md#themes)). **Theme** in the commands (the View menu where there is a menu bar) lists Pocket, Classic 98, XP and Aqua, and the choice is kept. The change happens under whatever is going on: an open session stays open, a draft keeps its text and caret, the transcript its place.
 
 | | Pocket | Classic 98 | XP | Aqua |
 | --- | --- | --- | --- | --- |
@@ -24,7 +24,7 @@ The application names no colour, border or font. It says what things are (a bar,
 
 <p align="center"><img src="docs/pocket-lody-form.webp" width="840" alt="The New Session form in the four themes, from one source: rows and a wide Start button in Pocket; combo boxes and centred buttons in Classic 98; combo boxes and trailing buttons in XP; popups with blue caps and Cancel before Start in Aqua"></p>
 
-The manifest lists `pointer` among the applet's services: Omarchy Pocket's shell then tells the window where the stage pointer rests over it, and what is under it shows so (a menu's row, a toolbar control).
+The manifest lists `pointer` among the applet's services: Omarchy Pocket's shell then tells the window where the stage pointer rests over it, and what is under it shows so (a menu's row, a toolbar control). PocketUI reads a resting pointer from PocketJS's `pointer()`; the host program Omarchy Pocket runs today passes no pointer to an applet's frame, so its shell sends the position as a touch contact with a reserved id and Omarchy Pocket's system layer (`host/layers/pointer.ts`, given to `tools/build.ts --layer`) turns it back into the frame's pointer.
 
 `app/create.tsx` is that form: three `Picker`s, a field, and `actions`. `app/semantic.test.ts` fails if a view names a colour, an edge, a radius or a theme.
 
@@ -37,8 +37,8 @@ The pictures are the simulator at 640×360 on the fixture data. Classic is set i
 | `app/` | The applet: `app.tsx` (the three panes and the commands), `sessions.tsx`, `session.tsx`, `items.tsx` (one transcript item as elements), `composer.tsx`, `info.tsx`, `create.tsx`, `link.tsx` (setting the device up and signing in: the page's QR code, the code, the countdown), `themes.ts`, `store.ts` (the workspace as the applet holds it), `net.ts` (the worker's transport, from pocket-nexus/applets) and `faces.ts` (the way from PocketUI's run-time faces to the companion's glyphs service, and the characters of what arrives asked for ahead) |
 | `protocol.ts` | What the applet and the service say to each other |
 | `service/` | The `lody` companion service: `service.ts` (routes, revisions, the held request), and three drivers behind one interface (`backend.ts`): `fixture.ts`, `cli.ts`, `remote.ts`. `serve.ts` runs it as an HTTP server; `provider.ts` is its form inside omarchy-pocketd or Pocket Hub |
-| `tools/` | `sim.ts` (the applet in PocketJS's simulator on any surface, against the service in process; the runner is PocketUI's), `build.ts` (the package for a host contract), `thor.ts` (build, push, open, capture, provision and call the service on a device over adb), `paths.ts` (where the dependencies are, alone or vendored) |
-| `vendor/` | `pocketui`, `pocketjs` and `applets`, as submodules |
+| `tools/` | `sim.ts` (the applet on PocketJS's simulation host on any surface, against the service in process; the runner is PocketJS's `tools/pocketui-sim.ts`), `build.ts` (the package for a host contract, by Pocket Shell's CLI), `setup.ts` (the `node_modules` links to the vendored PocketJS and Pocket Shell), `thor.ts` (build, push, open, capture, provision and call the service on a device over adb), `paths.ts` (where the dependencies are, alone or vendored) |
+| `vendor/` | `pocket-shell` (with the PocketJS it pins at `vendor/pocket-shell/vendor/pocketjs`) and `applets`, as submodules |
 | `test/app.test.ts` | The applet on three surfaces, driven by taps, drags, buttons and keys |
 
 ## How the data gets there
@@ -101,7 +101,7 @@ With no file it is `cli` when a CLI and a Node are found, else `fixture`; on a L
 
 ```sh
 git submodule update --init vendor/pocket-lody
-git -C vendor/pocket-lody submodule update --init vendor/pocketui vendor/applets   # PocketJS is the one beside it
+(cd vendor/pocket-lody && bun run setup)   # Pocket Shell, its PocketJS and pocket-nexus/applets
 bun tools/android.ts all                 # lib, proot, daemon, shell, applets, lody, apk, install
 ```
 
@@ -154,8 +154,7 @@ Omarchy Pocket gives an applet's window the stage pointer's contacts. **An apple
 ## Working on it
 
 ```sh
-git submodule update --init vendor/pocketui vendor/pocketjs vendor/applets
-(cd vendor/pocketjs && bun install)
+bun run setup   # vendor/pocket-shell, its vendor/pocketjs, vendor/applets, and the node_modules links
 ```
 
 ```sh
@@ -164,13 +163,13 @@ bun tools/sim.ts --size 320x240 --do "…"      # a 3DS's lower screen
 bun tools/sim.ts --psp --do "press:DOWN;press:CIRCLE;shot:/tmp/p.png"
 bun tools/sim.ts --theme aqua --do "frames:60;theme:classic;cmd:session.new;shot:/tmp/t.png"   # a theme to start in, changed while it runs
 bun tools/sim.ts --start signed-out --do "…"  # the way in: setup, sign-in, on the fixture
-bun vendor/pocketui/tools/sim.ts --do "…"                # PocketUI's gallery
+(cd vendor/pocket-shell/vendor/pocketjs && bun tools/pocketui-sim.ts --target macos-widget --do "…")   # PocketUI's gallery
 bun test ./test                                        # the applet on three surfaces, and in each theme
 bun test ./app ./service                               # the store and the service
 bun run typecheck
 ```
 
-The simulator needs its wasm core once: `rustup target add wasm32-unknown-unknown` for the pinned toolchain, then `bun vendor/pocketjs/tools/wasm.ts`. Chinese draws in the simulator through Pocket Hub's glyphs service where there is a checkout of it beside this repository (Omarchy Pocket's `vendor/pocket-hub`, with `git -C vendor/pocket-hub submodule update --init vendor/pocketjs`) or at `POCKET_HUB_ROOT`; it uses CoreText on a Mac. `bun tools/sim.ts --fake-glyphs` and the tests use a stand-in instead (`tools/glyphs-fake.ts`: a box for each character, the same on every computer), and `bun tools/text-bench.ts` counts on it what a long Chinese transcript costs: requests, bytes, frames until the text is whole, layouts, and what scrolling back over it costs (nothing).
+The simulator needs its wasm core once: `rustup target add wasm32-unknown-unknown` for the pinned toolchain, then `bun vendor/pocket-shell/vendor/pocketjs/tools/wasm.ts`. Chinese draws in the simulator through Pocket Hub's glyphs service where there is a checkout of it beside this repository (Omarchy Pocket's `vendor/pocket-hub`, with `git -C vendor/pocket-hub submodule update --init vendor/pocketjs`) or at `POCKET_HUB_ROOT`; it uses CoreText on a Mac. `bun tools/sim.ts --fake-glyphs` and the tests use a stand-in instead (`tools/glyphs-fake.ts`: a box for each character, the same on every computer), and `bun tools/text-bench.ts` counts on it what a long Chinese transcript costs: requests, bytes, frames until the text is whole, layouts, and what scrolling back over it costs (nothing).
 
 On a device running a build that `run-as` reaches (`bun tools/android.ts apk --debuggable`, which is the release build signed with the release key: it installs over a published release and keeps its Linux root):
 
@@ -192,4 +191,4 @@ bun tools/thor.ts sh 'omarchy-shell pocket.input hold DOWN 3'
 
 ## License
 
-The applet imports pocket-nexus/applets' `lib/net.ts`, `lib/net-worker.ts` and `ui/glyphs.ts`, which are GPL-3.0-or-later, so the applet's package is distributed under those terms. So this repository is GPL-3.0-or-later ([LICENSE](LICENSE)). PocketUI (`vendor/pocketui`, MIT) imports nothing from there, and `service/` imports neither; `service/qr.ts` is PocketJS's encoder (MIT), copied with its notice. Lody is LodyAI's; this is an independent client that talks to it through its published command-line tool.
+The applet imports pocket-nexus/applets' `lib/net.ts`, `lib/net-worker.ts` and `ui/glyphs.ts`, which are GPL-3.0-or-later, so the applet's package is distributed under those terms. So this repository is GPL-3.0-or-later ([LICENSE](LICENSE)). PocketUI (part of PocketJS, MIT) imports nothing from there, and `service/` imports neither; `service/qr.ts` is PocketJS's encoder (MIT), copied with its notice. Lody is LodyAI's; this is an independent client that talks to it through its published command-line tool.

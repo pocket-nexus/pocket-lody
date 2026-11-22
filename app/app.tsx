@@ -8,9 +8,9 @@
 //   an entry      the composer, with @ naming sessions, files and roles
 // How that looks on a surface (columns or one pane, a legend or bar
 // controls, a sheet or a popover, typing in place or on a docked keyboard)
-// is the surface's Environment and PocketUI's idioms (pocketui/src/core/env.ts).
+// is the surface's Environment and PocketUI's idioms (PocketJS framework/src/pocketui/core/env.ts).
 import { createMemo, Show } from "solid-js";
-import { confirm, Panes, presentMenu, Scaffold, Toast, useUI, ZStack, type Command, type EditorHandle, type UIElement } from "../vendor/pocketui/src/index.ts";
+import { confirm, Panes, presentMenu, Scaffold, Toast, useUI, ZStack, type Command, type EditorHandle, type UIElement } from "@pocketjs/framework/ui";
 import { presentCreate } from "./create.tsx";
 import { InfoPane } from "./info.tsx";
 import { LinkPane } from "./link.tsx";

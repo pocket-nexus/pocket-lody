@@ -4,7 +4,7 @@
 // the realm, so a pane that is rebuilt (another session opened, a different
 // idiom) finds its state as it left it.
 import { createSignal, type Accessor } from "solid-js";
-import type { FeedAnchor, Token } from "../vendor/pocketui/src/index.ts";
+import type { FeedAnchor, Token } from "@pocketjs/framework/ui";
 import { createLodyStore, type LodyStore, type Transport } from "./store.ts";
 
 export interface Draft {

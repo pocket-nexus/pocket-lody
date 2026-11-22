@@ -7,7 +7,7 @@
 // label beside a popup, and whether Start is a wide button under the form or
 // the default button beside Cancel at its foot, is the theme's.
 import { createSignal, Show } from "solid-js";
-import { Picker, present, Text, TextEditor, VStack, type EditorHandle, type UI } from "../vendor/pocketui/src/index.ts";
+import { Picker, present, Text, TextEditor, VStack, type EditorHandle, type UI } from "@pocketjs/framework/ui";
 import type { CreateOptions } from "../protocol.ts";
 import type { AppState } from "./state.ts";
 

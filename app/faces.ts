@@ -1,6 +1,6 @@
 // pocket-lody/app/faces.ts — text in any script. PocketUI draws ASCII from
 // the faces baked into the package and everything else from its run-time
-// faces (pocketui/src/ui/runtimetext.ts): two tables of glyphs, regular and
+// faces (PocketJS framework/src/pocketui/ui/runtimetext.ts): two tables of glyphs, regular and
 // bold, that grow by the characters shown and keep them. What this file adds
 // is the way to the glyphs: the companion's `glyphs` service (omarchy-pocketd
 // on Omarchy Pocket, Pocket Hub on a paired Mac), asked through the applet's
@@ -9,7 +9,7 @@
 import { createRenderEffect, type Accessor } from "solid-js";
 import { platform } from "@pocketjs/framework/platform";
 import { companionService, DESCRIPTOR_BYTES, fetch, NET_MAX_RESPONSE_BYTES, requestBytes } from "../vendor/applets/lib/net.ts";
-import { installRuntimeText, type GlyphRequest, type RuntimeText } from "../vendor/pocketui/src/index.ts";
+import { installRuntimeText, type GlyphRequest, type RuntimeText } from "@pocketjs/framework/ui";
 
 const URL = companionService("glyphs", "/atlas");
 /** One reply: a few hundred glyphs at the device's density, up to what one response carries here. */
